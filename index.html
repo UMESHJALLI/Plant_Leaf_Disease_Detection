@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plant Disease Detection</title>
+
+  <!-- TensorFlow.js & Teachable Machine -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #a8edea, #fed6e3);
+      text-align: center;
+      padding: 40px;
+      color: #2d3436;
+    }
+
+    h2 {
+      font-size: 34px;
+      margin-bottom: 25px;
+      color: #1e272e;
+    }
+
+    /* Stylish upload button */
+    .upload-btn {
+      display: inline-block;
+      background-color: #00b894;
+      color: white;
+      padding: 14px 26px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 600;
+      transition: 0.3s;
+      margin-top: 10px;
+    }
+
+    .upload-btn:hover {
+      background-color: #55efc4;
+      transform: scale(1.05);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    #preview {
+      display: none;
+      margin: 30px auto;
+      width: 420px;
+      max-width: 90%;
+      border-radius: 15px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 24px;
+      color: #2d3436;
+      font-weight: bold;
+    }
+
+    #reasonBox {
+      margin-top: 20px;
+      background: #ffffff;
+      padding: 18px;
+      border-radius: 12px;
+      width: 70%;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+      display: none;
+      text-align: left;
+    }
+
+    #reasonBox h4 {
+      margin-bottom: 8px;
+      color: #d63031;
+    }
+
+    #reasonBox p {
+      font-size: 17px;
+      color: #636e72;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>🌿 Plant Disease Detection</h2>
+
+  <label for="imageUpload" class="upload-btn">📸 Choose Leaf Image</label>
+  <input type="file" id="imageUpload" accept="image/*"><br><br>
+
+  <img id="preview" alt="Uploaded Plant Leaf Preview"><br>
+
+  <h3 id="result">Prediction will appear here...</h3>
+
+  <div id="reasonBox">
+    <h4>About This Disease:</h4>
+    <p id="reasonText"></p>
+  </div>
+
+  <script>
+    const modelURL = "model/model.json";
+    const metadataURL = "model/metadata.json";
+
+    let model;
+
+    const diseaseReasons = {
+  "Apple___Apple_scab": "Happens due to a fungus that causes dark spots on leaves and fruits, especially in cool and wet weather.",
+  "Apple___Black_rot": "Caused by a fungus that makes round black spots on leaves and fruits during rainy days.",
+  "Apple___Cedar_apple_rust": "Occurs when apple trees grow near cedar trees; fungus spreads through air and causes orange spots.",
+  "Apple___healthy": "The apple leaf is healthy with no spots or damage.",
+
+  "Cherry_(including_sour)___Powdery_mildew": "Caused by a fungus that makes white powder on leaves in warm and humid air.",
+  "Cherry_(including_sour)___healthy": "The cherry leaf is clean and healthy without any white or dark marks.",
+
+  "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Caused by fungus in warm, humid weather that makes gray patches on leaves.",
+  "Corn_(maize)___Common_rust_": "Caused by fungus that makes small red or brown spots on both sides of the leaves.",
+  "Corn_(maize)___Northern_Leaf_Blight": "Happens due to fungus that spreads by wind and rain, making long gray marks on leaves.",
+  "Corn_(maize)___healthy": "The corn leaves look fresh and green with no signs of disease.",
+
+  "Grape___Black_rot": "Caused by fungus during wet weather, forming brown or black spots on grapes and leaves.",
+  "Grape___Esca_(Black_Measles)": "Caused by several fungi that make dark lines and dry patches on leaves.",
+  "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": "Happens in humid air, causing brown spots on leaves.",
+  "Grape___healthy": "The grape leaf is green and healthy without any marks.",
+
+  "Potato___Early_blight": "Caused by fungus that makes dark circles on old leaves, common in warm and dry weather.",
+  "Potato___Late_blight": "Caused by water mold in cool, wet conditions, leading to quick rotting of leaves and stems.",
+  "Potato___healthy": "The potato leaf is healthy and green without any spots or holes.",
+
+  "Strawberry___Leaf_scorch": "Caused by fungus that makes purple or brown spots and dries the leaf edges.",
+  "Strawberry___healthy": "The strawberry leaf is clean, fresh, and healthy.",
+
+  "Tomato___Bacterial_spot": "Caused by bacteria that make small dark spots on leaves and fruits after rain or watering.",
+  "Tomato___Early_blight": "Happens due to fungus that makes brown rings on older leaves first.",
+  "Tomato___Late_blight": "Caused by fungus in cool, wet air that makes leaves and fruits rot fast.",
+  "Tomato___Leaf_Mold": "Caused by fungus that grows on wet leaves, showing yellow spots and gray mold.",
+  "Tomato___Septoria_leaf_spot": "Caused by fungus in soil, forming many small round spots on leaves.",
+  "Tomato___Target_Spot": "Caused by fungus in warm, moist weather, making brown circles like targets.",
+  "Tomato___healthy": "The tomato leaf is fresh and green with no spots or infection."
+};
+
+
+    async function loadModel() {
+      console.log("Loading model...");
+      model = await tmImage.load(modelURL, metadataURL);
+      console.log("✅ Model loaded successfully");
+    }
+    loadModel();
+
+    const imageUpload = document.getElementById("imageUpload");
+    const preview = document.getElementById("preview");
+    const result = document.getElementById("result");
+    const reasonBox = document.getElementById("reasonBox");
+    const reasonText = document.getElementById("reasonText");
+
+    imageUpload.addEventListener("change", function () {
+      const file = imageUpload.files[0];
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = "block";
+      reasonBox.style.display = "none";
+      preview.onload = predictImage;
+    });
+
+    async function predictImage() {
+      const prediction = await model.predict(preview);
+
+      let bestClass = "";
+      let bestScore = 0;
+
+      prediction.forEach(p => {
+        if (p.probability > bestScore) {
+          bestScore = p.probability;
+          bestClass = p.className;
+        }
+      });
+
+      result.innerHTML = `Prediction: <b>${bestClass}</b> (${(bestScore * 100).toFixed(2)}%)`;
+
+      if (diseaseReasons[bestClass]) {
+        reasonText.innerHTML = diseaseReasons[bestClass];
+        reasonBox.style.display = "block";
+      } else {
+        reasonText.innerHTML = "No specific cause information available.";
+        reasonBox.style.display = "block";
+      }
+    }
+  </script>
+</body>
+</html>
