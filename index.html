@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Plant Disease Detection</title>
+  <title>🌿 Plant Disease Detection</title>
 
   <!-- TensorFlow.js & Teachable Machine -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
@@ -24,7 +24,6 @@
       color: #1e272e;
     }
 
-    /* Stylish upload button */
     .upload-btn {
       display: inline-block;
       background-color: #00b894;
@@ -105,44 +104,30 @@
   </div>
 
   <script>
-    // 🔹 Replace YOUR_MODEL_ID with your actual Teachable Machine model ID
-    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/YOUR_MODEL_ID/";
+    // ✅ Replace with your Teachable Machine model URL
+    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/T7-G-prMm/";
 
     let model;
 
     const diseaseReasons = {
-      "Apple___Apple_scab": "Happens due to a fungus that causes dark spots on leaves and fruits, especially in cool and wet weather.",
-      "Apple___Black_rot": "Caused by a fungus that makes round black spots on leaves and fruits during rainy days.",
-      "Apple___Cedar_apple_rust": "Occurs when apple trees grow near cedar trees; fungus spreads through air and causes orange spots.",
-      "Apple___healthy": "The apple leaf is healthy with no spots or damage.",
+      "Apple___Apple_scab": "Caused by fungus that makes dark, scabby spots on apple leaves and fruits, especially in wet weather.",
+      "Apple___Black_rot": "Caused by a fungus that creates circular black spots on leaves and fruit, spreading during humid conditions.",
+      "Apple___Cedar_apple_rust": "Occurs when apple trees are near cedar trees. Orange spots appear due to fungal infection spread by air.",
+      "Apple___healthy": "The apple leaf is healthy and shows no signs of infection.",
 
-      "Cherry_(including_sour)___Powdery_mildew": "Caused by a fungus that makes white powder on leaves in warm and humid air.",
-      "Cherry_(including_sour)___healthy": "The cherry leaf is clean and healthy without any white or dark marks.",
+      "Corn_(maize)___Common_rust_": "Caused by fungus that forms orange-red pustules on both sides of the leaves.",
+      "Corn_(maize)___Northern_Leaf_Blight": "Caused by fungus that forms long gray-green lesions, spreading rapidly in cool weather.",
+      "Corn_(maize)___healthy": "The corn leaf is healthy and green with no signs of rust or blight.",
 
-      "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Caused by fungus in warm, humid weather that makes gray patches on leaves.",
-      "Corn_(maize)___Common_rust_": "Caused by fungus that makes small red or brown spots on both sides of the leaves.",
-      "Corn_(maize)___Northern_Leaf_Blight": "Happens due to fungus that spreads by wind and rain, making long gray marks on leaves.",
-      "Corn_(maize)___healthy": "The corn leaves look fresh and green with no signs of disease.",
+      "Potato___Early_blight": "Fungal disease that forms dark concentric rings on older leaves in warm, dry weather.",
+      "Potato___Late_blight": "Caused by water mold, leading to large dark patches and rapid rotting in cool, wet conditions.",
+      "Potato___healthy": "The potato leaf is healthy, green, and free from infection.",
 
-      "Grape___Black_rot": "Caused by fungus during wet weather, forming brown or black spots on grapes and leaves.",
-      "Grape___Esca_(Black_Measles)": "Caused by several fungi that make dark lines and dry patches on leaves.",
-      "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": "Happens in humid air, causing brown spots on leaves.",
-      "Grape___healthy": "The grape leaf is green and healthy without any marks.",
-
-      "Potato___Early_blight": "Caused by fungus that makes dark circles on old leaves, common in warm and dry weather.",
-      "Potato___Late_blight": "Caused by water mold in cool, wet conditions, leading to quick rotting of leaves and stems.",
-      "Potato___healthy": "The potato leaf is healthy and green without any spots or holes.",
-
-      "Strawberry___Leaf_scorch": "Caused by fungus that makes purple or brown spots and dries the leaf edges.",
-      "Strawberry___healthy": "The strawberry leaf is clean, fresh, and healthy.",
-
-      "Tomato___Bacterial_spot": "Caused by bacteria that make small dark spots on leaves and fruits after rain or watering.",
-      "Tomato___Early_blight": "Happens due to fungus that makes brown rings on older leaves first.",
-      "Tomato___Late_blight": "Caused by fungus in cool, wet air that makes leaves and fruits rot fast.",
-      "Tomato___Leaf_Mold": "Caused by fungus that grows on wet leaves, showing yellow spots and gray mold.",
-      "Tomato___Septoria_leaf_spot": "Caused by fungus in soil, forming many small round spots on leaves.",
-      "Tomato___Target_Spot": "Caused by fungus in warm, moist weather, making brown circles like targets.",
-      "Tomato___healthy": "The tomato leaf is fresh and green with no spots or infection."
+      "Tomato___Bacterial_spot": "Caused by bacteria that make small dark brown spots on leaves and fruits.",
+      "Tomato___Early_blight": "Fungal infection that causes brown spots and yellowing, starting from older leaves.",
+      "Tomato___Late_blight": "A severe fungal disease that causes leaf rot and dark patches in cool, wet weather.",
+      "Tomato___Leaf_Mold": "Fungal growth forms yellow spots and gray mold underneath the leaves.",
+      "Tomato___healthy": "The tomato leaf looks fresh, green, and disease-free."
     };
 
     async function loadModel() {
@@ -160,6 +145,7 @@
 
     imageUpload.addEventListener("change", function () {
       const file = imageUpload.files[0];
+      if (!file) return;
       preview.src = URL.createObjectURL(file);
       preview.style.display = "block";
       reasonBox.style.display = "none";
@@ -167,8 +153,12 @@
     });
 
     async function predictImage() {
-      const prediction = await model.predict(preview);
+      if (!model) {
+        result.innerHTML = "Model is still loading. Please wait...";
+        return;
+      }
 
+      const prediction = await model.predict(preview);
       let bestClass = "";
       let bestScore = 0;
 
@@ -183,11 +173,10 @@
 
       if (diseaseReasons[bestClass]) {
         reasonText.innerHTML = diseaseReasons[bestClass];
-        reasonBox.style.display = "block";
       } else {
-        reasonText.innerHTML = "No specific cause information available.";
-        reasonBox.style.display = "block";
+        reasonText.innerHTML = "No detailed information available for this disease.";
       }
+      reasonBox.style.display = "block";
     }
   </script>
 </body>
