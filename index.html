@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🌿 Plant Disease Detection</title>
+  <title>Plant Disease Detection</title>
 
   <!-- TensorFlow.js & Teachable Machine -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
@@ -24,6 +24,7 @@
       color: #1e272e;
     }
 
+    /* Stylish upload button */
     .upload-btn {
       display: inline-block;
       background-color: #00b894;
@@ -104,30 +105,28 @@
   </div>
 
   <script>
-    // ✅ Replace with your Teachable Machine model URL
+    // ✅ Teachable Machine model URL
     const MODEL_URL = "https://teachablemachine.withgoogle.com/models/T7-G-prMm/";
-
     let model;
 
     const diseaseReasons = {
-      "Apple___Apple_scab": "Caused by fungus that makes dark, scabby spots on apple leaves and fruits, especially in wet weather.",
-      "Apple___Black_rot": "Caused by a fungus that creates circular black spots on leaves and fruit, spreading during humid conditions.",
-      "Apple___Cedar_apple_rust": "Occurs when apple trees are near cedar trees. Orange spots appear due to fungal infection spread by air.",
-      "Apple___healthy": "The apple leaf is healthy and shows no signs of infection.",
+      "Apple___Apple_scab": "Caused by a fungus that makes dark spots on leaves and fruits, especially in wet weather.",
+      "Apple___Black_rot": "A fungus that makes black spots on apple leaves and fruits during rainy seasons.",
+      "Apple___Cedar_apple_rust": "Happens when apple trees are near cedar trees, spreading orange fungus spots.",
+      "Apple___healthy": "The apple leaf is healthy with no infection.",
 
-      "Corn_(maize)___Common_rust_": "Caused by fungus that forms orange-red pustules on both sides of the leaves.",
-      "Corn_(maize)___Northern_Leaf_Blight": "Caused by fungus that forms long gray-green lesions, spreading rapidly in cool weather.",
-      "Corn_(maize)___healthy": "The corn leaf is healthy and green with no signs of rust or blight.",
+      "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Caused by fungus in humid air, forming gray patches on leaves.",
+      "Corn_(maize)___Common_rust_": "Fungal disease that makes small reddish-brown spots on both sides of leaves.",
+      "Corn_(maize)___Northern_Leaf_Blight": "Spread by wind and rain, forming long gray marks on leaves.",
+      "Corn_(maize)___healthy": "The corn leaf is fresh and green without disease.",
 
-      "Potato___Early_blight": "Fungal disease that forms dark concentric rings on older leaves in warm, dry weather.",
-      "Potato___Late_blight": "Caused by water mold, leading to large dark patches and rapid rotting in cool, wet conditions.",
-      "Potato___healthy": "The potato leaf is healthy, green, and free from infection.",
-
-      "Tomato___Bacterial_spot": "Caused by bacteria that make small dark brown spots on leaves and fruits.",
-      "Tomato___Early_blight": "Fungal infection that causes brown spots and yellowing, starting from older leaves.",
-      "Tomato___Late_blight": "A severe fungal disease that causes leaf rot and dark patches in cool, wet weather.",
-      "Tomato___Leaf_Mold": "Fungal growth forms yellow spots and gray mold underneath the leaves.",
-      "Tomato___healthy": "The tomato leaf looks fresh, green, and disease-free."
+      "Tomato___Bacterial_spot": "Caused by bacteria that make dark, water-soaked spots on leaves and fruits.",
+      "Tomato___Early_blight": "Fungal infection that causes brown rings on older leaves first.",
+      "Tomato___Late_blight": "Fungus spreads fast in cool, wet air causing rot on leaves and fruits.",
+      "Tomato___Leaf_Mold": "Caused by fungus that grows on wet leaves, showing yellow spots and gray mold.",
+      "Tomato___Septoria_leaf_spot": "Fungus in soil makes many small round spots on tomato leaves.",
+      "Tomato___Target_Spot": "Fungal infection forming brown circles like targets on leaves.",
+      "Tomato___healthy": "The tomato leaf is fresh and green with no infection."
     };
 
     async function loadModel() {
@@ -146,37 +145,43 @@
     imageUpload.addEventListener("change", function () {
       const file = imageUpload.files[0];
       if (!file) return;
+
       preview.src = URL.createObjectURL(file);
       preview.style.display = "block";
+      result.innerHTML = "Processing...";
       reasonBox.style.display = "none";
-      preview.onload = predictImage;
+
+      preview.onload = () => predictImage();
     });
 
     async function predictImage() {
-      if (!model) {
-        result.innerHTML = "Model is still loading. Please wait...";
-        return;
-      }
+      try {
+        const prediction = await model.predict(preview);
+        console.log("Prediction output:", prediction);
 
-      const prediction = await model.predict(preview);
-      let bestClass = "";
-      let bestScore = 0;
+        let bestClass = "";
+        let bestScore = 0;
 
-      prediction.forEach(p => {
-        if (p.probability > bestScore) {
-          bestScore = p.probability;
-          bestClass = p.className;
+        prediction.forEach(p => {
+          if (p.probability > bestScore) {
+            bestScore = p.probability;
+            bestClass = p.className;
+          }
+        });
+
+        result.innerHTML = `Prediction: <b>${bestClass}</b> (${(bestScore * 100).toFixed(2)}%)`;
+
+        if (diseaseReasons[bestClass]) {
+          reasonText.innerHTML = diseaseReasons[bestClass];
+          reasonBox.style.display = "block";
+        } else {
+          reasonText.innerHTML = "No specific cause information available.";
+          reasonBox.style.display = "block";
         }
-      });
-
-      result.innerHTML = `Prediction: <b>${bestClass}</b> (${(bestScore * 100).toFixed(2)}%)`;
-
-      if (diseaseReasons[bestClass]) {
-        reasonText.innerHTML = diseaseReasons[bestClass];
-      } else {
-        reasonText.innerHTML = "No detailed information available for this disease.";
+      } catch (err) {
+        console.error("Prediction error:", err);
+        result.innerHTML = "⚠️ Prediction failed. Please check the console for details.";
       }
-      reasonBox.style.display = "block";
     }
   </script>
 </body>
