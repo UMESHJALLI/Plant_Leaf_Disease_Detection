@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Plant Disease Detection</title>
 
-  <!-- TensorFlow.js & Teachable Machine -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
@@ -24,7 +23,6 @@
       color: #1e272e;
     }
 
-    /* Stylish upload button */
     .upload-btn {
       display: inline-block;
       background-color: #00b894;
@@ -63,12 +61,12 @@
       font-weight: bold;
     }
 
-    #reasonBox {
-      margin-top: 20px;
+    #infoBox {
+      margin-top: 25px;
       background: #ffffff;
-      padding: 18px;
+      padding: 20px;
       border-radius: 12px;
-      width: 70%;
+      width: 75%;
       margin-left: auto;
       margin-right: auto;
       box-shadow: 0 6px 12px rgba(0,0,0,0.15);
@@ -76,15 +74,27 @@
       text-align: left;
     }
 
-    #reasonBox h4 {
+    #infoBox h4 {
       margin-bottom: 8px;
-      color: #d63031;
+      color: #0984e3;
     }
 
-    #reasonBox p {
+    #infoBox p {
       font-size: 17px;
-      color: #636e72;
+      color: #2d3436;
       line-height: 1.5;
+    }
+    button{
+      background: linear-gradient(45deg, #00b894, #55efc4);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 28px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 184, 148, 0.5);
+      transition: all 0.3s ease;
     }
   </style>
 </head>
@@ -94,100 +104,152 @@
 
   <label for="imageUpload" class="upload-btn">📸 Choose Leaf Image</label>
   <input type="file" id="imageUpload" accept="image/*"><br><br>
+  <button class="btn secondary" id="useCamBtn">🎥 Use Camera</button>
 
   <img id="preview" alt="Uploaded Plant Leaf Preview"><br>
 
   <h3 id="result">Prediction will appear here...</h3>
 
-  <div id="reasonBox">
-    <h4>About This Disease:</h4>
-    <p id="reasonText"></p>
+  <div id="infoBox">
+    <h4>About Disease:</h4>
+    <p id="aboutText"></p>
+    <h4>Recommended Remedies:</h4>
+    <p id="remedyText"></p>
+    <h4>Pesticides / Treatments:</h4>
+    <p id="pesticideText"></p>
   </div>
 
   <script>
-    // ✅ Teachable Machine model URL
     const MODEL_URL = "https://teachablemachine.withgoogle.com/models/T7-G-prMm/";
     let model;
 
-    const diseaseReasons = {
-      "Apple___Apple_scab": "Caused by a fungus that makes dark spots on leaves and fruits, especially in wet weather.",
-      "Apple___Black_rot": "A fungus that makes black spots on apple leaves and fruits during rainy seasons.",
-      "Apple___Cedar_apple_rust": "Happens when apple trees are near cedar trees, spreading orange fungus spots.",
-      "Apple___healthy": "The apple leaf is healthy with no infection.",
-
-      "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Caused by fungus in humid air, forming gray patches on leaves.",
-      "Corn_(maize)___Common_rust_": "Fungal disease that makes small reddish-brown spots on both sides of leaves.",
-      "Corn_(maize)___Northern_Leaf_Blight": "Spread by wind and rain, forming long gray marks on leaves.",
-      "Corn_(maize)___healthy": "The corn leaf is fresh and green without disease.",
-      
-      "Potato___Early_blight": "Fungal disease that forms dark concentric rings on older leaves in warm, dry weather.",
-      "Potato___Late_blight": "Caused by water mold, leading to large dark patches and rapid rotting in cool, wet conditions.",
-      "Potato___healthy": "The potato leaf is healthy, green, and free from infection.",
-
-      "Tomato___Bacterial_spot": "Caused by bacteria that make dark, water-soaked spots on leaves and fruits.",
-      "Tomato___Early_blight": "Fungal infection that causes brown rings on older leaves first.",
-      "Tomato___Late_blight": "Fungus spreads fast in cool, wet air causing rot on leaves and fruits.",
-      "Tomato___Leaf_Mold": "Caused by fungus that grows on wet leaves, showing yellow spots and gray mold.",
-      "Tomato___Septoria_leaf_spot": "Fungus in soil makes many small round spots on tomato leaves.",
-      "Tomato___Target_Spot": "Fungal infection forming brown circles like targets on leaves.",
-      "Tomato___healthy": "The tomato leaf is fresh and green with no infection."
+    const diseaseData = {
+      "Apple___Apple_scab": {
+        about: "Fungal disease causing dark, velvety spots on leaves and fruits, leading to fruit cracking.",
+        remedy: "Prune and destroy infected leaves and fruits. Maintain air circulation by proper spacing.",
+        pesticide: "Apply Mancozeb or Captan fungicide at early growth stages."
+      },
+      "Apple___Black_rot": {
+        about: "Caused by Botryosphaeria obtusa fungus; black spots appear on leaves and fruits.",
+        remedy: "Remove mummified fruits and pruned twigs. Avoid overhead irrigation.",
+        pesticide: "Spray Thiophanate-methyl or Captan during bloom."
+      },
+      "Corn_(maize)___Common_rust_": {
+        about: "Fungal disease forming reddish-brown pustules on both leaf surfaces.",
+        remedy: "Plant resistant hybrids and rotate crops regularly.",
+        pesticide: "Use Mancozeb or Propiconazole sprays when rust appears."
+      },
+      "Corn_(maize)___Northern_Leaf_Blight": {
+        about: "Elongated grayish-green lesions appear on leaves due to Exserohilum turcicum.",
+        remedy: "Use resistant corn varieties and practice crop rotation.",
+        pesticide: "Apply Carbendazim or Mancozeb at early symptoms."
+      },
+      "Grape___Black_rot": {
+        about: "Common fungal disease causing dark circular spots on leaves and fruit rot.",
+        remedy: "Remove infected berries and leaves. Maintain vineyard hygiene.",
+        pesticide: "Use Ziram, Mancozeb, or Myclobutanil."
+      },
+      "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": {
+        about: "Causes brown irregular spots on leaves reducing photosynthesis and yield.",
+        remedy: "Remove affected leaves and prune dense canopies.",
+        pesticide: "Spray with Copper oxychloride or Mancozeb."
+      },
+      "Potato___Early_blight": {
+        about: "Fungal infection forming dark concentric rings on older leaves first.",
+        remedy: "Destroy infected debris and ensure proper spacing for ventilation.",
+        pesticide: "Use Chlorothalonil or Mancozeb."
+      },
+      "Potato___Late_blight": {
+        about: "Caused by Phytophthora infestans; leads to large brown patches and leaf rot.",
+        remedy: "Avoid overwatering and remove infected plants immediately.",
+        pesticide: "Spray Metalaxyl or Mancozeb fungicide."
+      },
+      "Strawberry___Leaf_scorch": {
+        about: "Bacterial infection causing purple or dark brown spots that enlarge and merge.",
+        remedy: "Avoid wetting leaves and remove infected plants.",
+        pesticide: "Spray Copper-based bactericides."
+      },
+      "Tomato___Bacterial_spot": {
+        about: "Caused by Xanthomonas bacteria leading to small dark leaf spots and fruit lesions.",
+        remedy: "Avoid overhead watering and disinfect tools.",
+        pesticide: "Apply Copper hydroxide or Streptomycin formulations."
+      },
+      "Tomato___Early_blight": {
+        about: "Fungal disease producing dark concentric rings on leaves and stems.",
+        remedy: "Remove lower infected leaves and rotate crops annually.",
+        pesticide: "Use Chlorothalonil or Mancozeb sprays."
+      },
+      "Tomato___Late_blight": {
+        about: "Water mold infection causing greasy dark patches on leaves and stems.",
+        remedy: "Ensure good air circulation and remove affected parts quickly.",
+        pesticide: "Spray Metalaxyl or Copper oxychloride."
+      },
+      "Tomato___Leaf_Mold": {
+        about: "Grayish mold grows under leaves due to humidity.",
+        remedy: "Improve air circulation and reduce humidity in greenhouses.",
+        pesticide: "Spray Copper Oxychloride or Mancozeb weekly."
+      },
+      "Tomato___Septoria_leaf_spot": {
+        about: "Fungus causes numerous small, circular gray spots with dark borders.",
+        remedy: "Remove infected leaves and apply mulch to reduce splash spread.",
+        pesticide: "Spray Chlorothalonil or Mancozeb."
+      },
+      "Tomato___Target_Spot": {
+        about: "Circular brown spots with target-like rings appear on leaves and fruits.",
+        remedy: "Avoid high humidity and remove damaged foliage.",
+        pesticide: "Apply Difenoconazole or Mancozeb fungicide."
+      }
     };
 
     async function loadModel() {
-      console.log("Loading model...");
       model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
-      console.log("✅ Model loaded successfully");
+      console.log("✅ Model Loaded");
     }
     loadModel();
 
     const imageUpload = document.getElementById("imageUpload");
     const preview = document.getElementById("preview");
     const result = document.getElementById("result");
-    const reasonBox = document.getElementById("reasonBox");
-    const reasonText = document.getElementById("reasonText");
+    const infoBox = document.getElementById("infoBox");
+    const aboutText = document.getElementById("aboutText");
+    const remedyText = document.getElementById("remedyText");
+    const pesticideText = document.getElementById("pesticideText");
 
     imageUpload.addEventListener("change", function () {
       const file = imageUpload.files[0];
       if (!file) return;
-
       preview.src = URL.createObjectURL(file);
       preview.style.display = "block";
       result.innerHTML = "Processing...";
-      reasonBox.style.display = "none";
-
+      infoBox.style.display = "none";
       preview.onload = () => predictImage();
     });
 
     async function predictImage() {
-      try {
-        const prediction = await model.predict(preview);
-        console.log("Prediction output:", prediction);
-
-        let bestClass = "";
-        let bestScore = 0;
-
-        prediction.forEach(p => {
-          if (p.probability > bestScore) {
-            bestScore = p.probability;
-            bestClass = p.className;
-          }
-        });
-
-        result.innerHTML = `Prediction: <b>${bestClass}</b> (${(bestScore * 100).toFixed(2)}%)`;
-
-        if (diseaseReasons[bestClass]) {
-          reasonText.innerHTML = diseaseReasons[bestClass];
-          reasonBox.style.display = "block";
-        } else {
-          reasonText.innerHTML = "No specific cause information available.";
-          reasonBox.style.display = "block";
+      const prediction = await model.predict(preview);
+      let bestClass = "", bestScore = 0;
+      prediction.forEach(p => {
+        if (p.probability > bestScore) {
+          bestScore = p.probability;
+          bestClass = p.className;
         }
-      } catch (err) {
-        console.error("Prediction error:", err);
-        result.innerHTML = "⚠️ Prediction failed. Please check the console for details.";
+      });
+
+      result.innerHTML = `Prediction: <b>${bestClass}</b> (${(bestScore * 100).toFixed(2)}%)`;
+
+      if (diseaseData[bestClass]) {
+        const info = diseaseData[bestClass];
+        aboutText.innerHTML = info.about;
+        remedyText.innerHTML = info.remedy;
+        pesticideText.innerHTML = info.pesticide;
+        infoBox.style.display = "block";
+      } else {
+        aboutText.innerHTML = "No detailed information available.";
+        remedyText.innerHTML = "-";
+        pesticideText.innerHTML = "-";
+        infoBox.style.display = "block";
       }
     }
   </script>
 </body>
 </html>
-
